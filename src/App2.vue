@@ -1,25 +1,52 @@
 <template>
   <div>
-    <button @click="buttonDrawLine()">畫線段</button>
-    <button @click="buttonDrawArc()">畫弧線</button>
-    <button @click="buttonEdit()">編輯</button>
-    <button @click="buttonDrawComplete()">完成</button>
-    <h2 style="color:red">{{title}}</h2>
+    <div>
+      <button @click="buttonDrawLine()">畫線段</button>
+      <button @click="buttonDrawArc()">畫弧線</button>
+      <button @click="buttonEdit()">編輯</button>
+      <button @click="buttonDrawComplete()">完成</button>
+      <h2 style="color:red">{{title}}</h2>
+    </div>
+    <div id="mapContainer" @mousedown="onMouseDown($event)" @mouseup="onMouseUp($event)" @mousemove="onMouseMove($event)" @mouseout="onMouseOut($event)">
+      <canvas 
+        id="mycanvas"  
+        style='border:1px solid #000;'
+      ></canvas>
+    </div>
   </div>
-  <canvas 
-    id="mycanvas"  
-    style='border:1px solid #000;'
-    @mousedown="onMouseDown($event)"
-    @mouseup="onMouseUp($event)"
-    @mousemove="onMouseMove($event)"
-    @mouseout="onMouseOut($event)"
-  ></canvas>
-  
-  
 </template>
 
 <script setup>
   import { onMounted,ref } from 'vue';
+  import Map from '@arcgis/core/Map';
+  import MapView from '@arcgis/core/views/MapView';
+  //地圖
+  let map;
+  let mapview;
+
+  const initMap = () =>{
+    map = new Map({
+      basemap: "osm"
+    });
+    mapview = new MapView({
+      map: map,
+      center: [121.533383, 25.062537],
+      zoom: 10,
+      container: "mapContainer"
+    });
+    mapview.on("pointer-down",(e)=>{
+      console.log('mousedown');
+      console.log(e)
+      mapview.on("drag", (event)=>{
+        event.stopPropagation();
+      });
+    })
+    mapview.on('pointer-move', (e)=>{
+      console.log('pointer-move');
+      console.log(e)
+    })
+  }
+
 
   const canvas = ref(null)
   const ctx = ref(null)
@@ -47,6 +74,7 @@
 
 
   onMounted(()=>{
+    initMap();
     canvas.value = document.getElementById("mycanvas");
     canvas.value.width=1000;
     canvas.value.height=1000;
@@ -152,8 +180,9 @@
     isDragEdit = false;
     isDragArcControl = false;
   }
-
+  
   const onMouseDown = (event) =>{
+    console.log(event)
     //取得點擊滑鼠的x,y座標(canvas座標系統)
     let mouse = mouseCanvasPosition(canvas.value, event);
     if(isDrawLine){
@@ -283,4 +312,16 @@
     }
   }
 </script>
-
+<style scoped>
+#mapContainer{
+  position: relative;
+  width: 1000px;
+  height: 1000px;
+}
+#mycanvas{
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+</style>
